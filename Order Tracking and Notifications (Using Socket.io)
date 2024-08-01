@@ -1,0 +1,53 @@
+const http = require('http');
+const socketIo = require('socket.io');
+
+// Create HTTP server
+const server = http.createServer(app);
+const io = socketIo(server);
+
+// Order tracking
+io.on('connection', (socket) => {
+    console.log('New client connected');
+    socket.on('orderUpdate', (data) => {
+        io.emit('orderUpdate', data);
+    });
+    socket.on('disconnect', () => {
+        console.log('Client disconnected');
+    });
+});
+
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+import React, { useState, useEffect } from 'react';
+import io from 'socket.io-client';
+
+const socket = io('http://localhost:5000');
+
+const OrderTracking = () => {
+    const [orderUpdates, setOrderUpdates] = useState([]);
+
+    useEffect(() => {
+        socket.on('orderUpdate', (update) => {
+            setOrderUpdates((prevUpdates) => [...prevUpdates, update]);
+        });
+
+        return () => {
+            socket.off('orderUpdate');
+        };
+    }, []);
+
+    return (
+        <div>
+            <h1>Order Tracking</h1>
+            <div className="order-updates">
+                {orderUpdates.map((update, index) => (
+                    <div key={index} className="order-update">
+                        <p>{update}</p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+export default OrderTracking;
