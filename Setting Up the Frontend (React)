@@ -1,0 +1,118 @@
+import React from 'react';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import Register from './components/Register';
+import ProductList from './components/ProductList';
+import './App.css';
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Switch>
+          <Route path="/register" component={Register} />
+          <Route path="/products" component={ProductList} />
+        </Switch>
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+import React, { useState } from 'react';
+import axios from 'axios';
+
+const Register = () => {
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        password: ''
+    });
+
+    const { name, email, password } = formData;
+
+    const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+    const onSubmit = async e => {
+        e.preventDefault();
+        try {
+            const res = await axios.post('http://localhost:5000/api/users/register', formData);
+            console.log(res.data);
+        } catch (err) {
+            console.error(err.response.data);
+        }
+    };
+
+    return (
+        <div>
+            <h1>Register</h1>
+            <form onSubmit={e => onSubmit(e)}>
+                <div>
+                    <input
+                        type="text"
+                        placeholder="Name"
+                        name="name"
+                        value={name}
+                        onChange={e => onChange(e)}
+                    />
+                </div>
+                <div>
+                    <input
+                        type="email"
+                        placeholder="Email"
+                        name="email"
+                        value={email}
+                        onChange={e => onChange(e)}
+                    />
+                </div>
+                <div>
+                    <input
+                        type="password"
+                        placeholder="Password"
+                        name="password"
+                        value={password}
+                        onChange={e => onChange(e)}
+                    />
+                </div>
+                <input type="submit" value="Register" />
+            </form>
+        </div>
+    );
+};
+
+export default Register;
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+const ProductList = () => {
+    const [products, setProducts] = useState([]);
+
+    useEffect(() => {
+        const fetchProducts = async () => {
+            try {
+                const res = await axios.get('http://localhost:5000/api/products');
+                setProducts(res.data);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+        fetchProducts();
+    }, []);
+
+    return (
+        <div>
+            <h1>Products</h1>
+            <div className="product-list">
+                {products.map(product => (
+                    <div key={product._id} className="product-item">
+                        <h2>{product.name}</h2>
+                        <p>{product.description}</p>
+                        <p>${product.price}</p>
+                        {product.image && <img src={product.image} alt={product.name} />}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+export default ProductList;
