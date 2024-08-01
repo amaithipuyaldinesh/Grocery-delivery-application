@@ -1,0 +1,120 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+
+const app = express();
+
+// Middleware
+app.use(bodyParser.json());
+app.use(cors());
+
+// MongoDB connection
+mongoose.connect('mongodb://localhost:27017/groceryDelivery', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+});
+
+// Routes
+const userRoutes = require('./routes/user');
+const productRoutes = require('./routes/product');
+const orderRoutes = require('./routes/order');
+
+app.use('/api/users', userRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/orders', orderRoutes);
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+
+const UserSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true
+    },
+    email: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    password: {
+        type: String,
+        required: true
+    }
+});
+
+// Password hashing
+UserSchema.pre('save', async function(next) {
+    if (!this.isModified('password')) return next();
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+});
+
+module.exports = mongoose.model('User', UserSchema);
+const express = require('express');
+const router = express.Router();
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+const User = require('../models/User');
+
+// Register
+router.post('/register', async (req, res) => {
+    const { name, email, password } = req.body;
+    try {
+        let user = await User.findOne({ email });
+        if (user) {
+            return res.status(400).json({ msg: 'User already exists' });
+        }
+        user = new User({
+            name,
+            email,
+            password
+        });
+        await user.save();
+        res.send('User registered successfully');
+    } catch (err) {
+        res.status(500).send('Server error');
+    }
+});
+
+module.exports = router;
+const mongoose = require('mongoose');
+
+const ProductSchema = new mongoose.Schema({
+    name: {
+        type: String,
+        required: true
+    },
+    description: {
+        type: String
+    },
+    price: {
+        type: Number,
+        required: true
+    },
+    image: {
+        type: String
+    }
+});
+
+module.exports = mongoose.model('Product', ProductSchema);
+const express = require('express');
+const router = express.Router();
+
+const Product = require('../models/Product');
+
+// Get all products
+router.get('/', async (req, res) => {
+    try {
+        const products = await Product.find();
+        res.json(products);
+    } catch (err) {
+        res.status(500).send('Server error');
+    }
+});
+
+module.exports = router;
